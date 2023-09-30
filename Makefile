@@ -13,7 +13,7 @@ LFLAGS=-c
 DEBUG=-DDEBUG -g3 -ggdb -DDEBUG_MORE
 
 # If your compiling on one of these OS, uncomment it!!
-#OS=-DLINUX
+OS=-DLINUX
 #OS=-DHPUX
 #OS=-DBSD
 #OS=-DOS5
