@@ -1,0 +1,22 @@
+# Build artifacts
+*.o
+m7
+exp
+expx
+qp
+vulnerable
+vulnerable-remote
+zdec
+core
+
+# Editor and IDE files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
