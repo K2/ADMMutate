@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use ADMMutate, please cite it as below."
+authors:
+  - family-names: Macaulay
+    given-names: Shane
+    name-particle: K2
+title: "ADMMutate: Polymorphic shellcode engine"
+abstract: "ADMMutate is a polymorphic shellcode engine designed for creating mutating shellcode. It is one of the first public polymorphic shellcode generators, originally presented as a DefCon presentation."
+keywords:
+  - shellcode
+  - polymorphic
+  - exploit
+  - security
+  - vulnerability
+version: 0.8.4
+date-released: 1999-01-01
+repository-code: "https://github.com/K2/ADMMutate"
+license: AGPL-3.0
+contact:
+  - affiliation: "K2 / ktwo"
+    email: "smacaulay@gmail.com"
+    website: "https://ktwo.ca"
+references:
+  - type: article
+    title: "Polymorphic Blending Attacks"
+    authors:
+      - family-names: Fogla
+        given-names: Prahlad
+      - family-names: Sharif
+        given-names: Monirul
+      - family-names: Perdisci
+        given-names: Roberto
+      - family-names: Kolesnikov
+        given-names: Oleg
+      - family-names: Lee
+        given-names: Wenke
+    year: 2006
+    journal: "USENIX Security Symposium"
